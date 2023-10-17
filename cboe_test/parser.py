@@ -142,9 +142,12 @@ def parse(file: Iterable[str]):
                 logging.warning("Unknown data %r", line)
 
 
-def top_volume(events: Iterable, n=10):
+def top_volume(events: Iterable, n=10, store=None):
     totals: Counter[str] = Counter()
-    book: dict[str, Order] = dict()
+    # TODO: a time-space trade-off
+    # * keeping the book in RAM is fast, but size is capped
+    # * keeping it on disk is slowed, but max size is larger
+    book: dict[str, Order] = dict() if store is None else store
     for e in events:
         match e:
             case Trade():
@@ -179,3 +182,22 @@ def top_volume(events: Iterable, n=10):
                 book[e.id] = e
 
     return sorted(((v, k) for k, v in totals.items()), reverse=True)[:n]
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+    from tempfile import mktemp
+    import shelve
+    from tabulate import tabulate
+
+    # TODO considered insecure
+    name = mktemp()
+    try:
+        # TODO: shelve store slows down the algorithm by ~4x on my laptop
+        with shelve.open(name + "x", "c") as store:
+            data = top_volume(parse(sys.stdin), store=store)
+    finally:
+        os.unlink(name)
+
+    print(tabulate([(k, v) for v, k in data]))
