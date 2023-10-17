@@ -176,6 +176,10 @@ def top_volume(events: Iterable, n=10, store=None):
                     warnings.warn("Negative shares")
                     del book[e.id]
             case Order():
+                # FIXME: check this assumption
+                # looking at test data, order id may be reused...
+                # but only if the entire order is cancelled and recreated
+                # check if that's really the only case for order id reuse
                 if e.id in book:
                     warnings.warn(f"Duplicate order {e.id!r}")
                     continue

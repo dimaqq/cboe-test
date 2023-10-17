@@ -41,9 +41,27 @@ def test_trade():
 
 def test_order_cancel():
     store = {}
-    assert not top_volume([Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 100)])
+    assert not top_volume(
+        [Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 100)], store=store
+    )
     assert not store
 
     store = {}
-    assert not top_volume([Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 50)])
-    assert store == {0: Order(0, 42, 0, 50, 0, 0)}
+    assert not top_volume(
+        [Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 50)], store=store
+    )
+    assert store == {42: Order(0, 42, 0, 50, 0, 0)}
+
+
+def test_order_execute():
+    store = {}
+    assert top_volume(
+        [Order(0, 42, 0, 100, 0, 0), OrderExecuted(0, 42, 100, 0)], store=store
+    ) == [(100, 0)]
+    assert not store
+
+    store = {}
+    assert top_volume(
+        [Order(0, 42, 0, 100, 0, 0), OrderExecuted(0, 42, 50, 0)], store=store
+    ) == [(50, 0)]
+    assert store == {42: Order(0, 42, 0, 50, 0, 0)}
