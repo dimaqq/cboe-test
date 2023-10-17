@@ -143,15 +143,29 @@ def parse(file: Iterable[str]):
 
 def top_volume(events: Iterable, n=10):
     totals: Counter[str] = Counter()
+    book: dict[str, Order] = dict()
     for e in events:
         match e:
             case Trade():
-                ...
+                totals[e.symbol] += e.count
             case OrderExecuted():
-                ...
+                order = book.get(e.id)
+                if not order:
+                    warnings.warn(f"Missing order {e.id!r}")
+                    continue
             case OrderCancel():
-                ...
+                order = book.get(e.id)
+                if not order:
+                    warnings.warn(f"Missing order {e.id!r}")
+                    continue
+                order.count -= e.count
+                if order.count <= 0:
+                    del book[e.id]
             case Order():
-                ...
+                order = book.get(e.id)
+                if not order:
+                    warnings.warn(f"Missing order {e.id!r}")
+                    continue
+                totals[order.symbol] += e.count
 
     return sorted([(v, k) for k, v in totals.items()])[:n]
