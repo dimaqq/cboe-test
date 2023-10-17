@@ -43,3 +43,7 @@ def test_order_cancel():
     store = {}
     assert not top_volume([Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 100)])
     assert not store
+
+    store = {}
+    assert not top_volume([Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 50)])
+    assert store == {0: Order(0, 42, 0, 50, 0, 0)}
