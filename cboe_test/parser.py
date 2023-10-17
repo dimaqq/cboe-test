@@ -199,9 +199,9 @@ if __name__ == "__main__":
     name = mktemp()
     try:
         # TODO: shelve store slows down the algorithm by ~4x on my laptop
-        with shelve.open(name + "x", "c") as store:
+        with shelve.open(name, "c") as store:
             data = top_volume(parse(sys.stdin), store=store)
     finally:
-        os.unlink(name)
+        os.unlink(f"{name}.db")
 
     print(tabulate([(k, v) for v, k in data]))
