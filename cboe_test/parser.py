@@ -69,6 +69,7 @@ class OrderCancel:
         bits = [
             b.decode("ascii") for b in struct.unpack("8s1s12s6s", raw.encode("ascii"))
         ]
+        bits[3] = int(bits[3])
         assert bits[1] == "X"
         del bits[1]
         return cls(*bits)
@@ -153,19 +154,28 @@ def top_volume(events: Iterable, n=10):
                 if not order:
                     warnings.warn(f"Missing order {e.id!r}")
                     continue
+                totals[order.symbol] += e.count
+                order.count -= e.count
+                if not order.count:
+                    del book[e.id]
+                elif order.count < 0:
+                    warnings.warn("Negative shares")
+                    del book[e.id]
             case OrderCancel():
                 order = book.get(e.id)
                 if not order:
                     warnings.warn(f"Missing order {e.id!r}")
                     continue
                 order.count -= e.count
-                if order.count <= 0:
+                if not order.count:
+                    del book[e.id]
+                elif order.count < 0:
+                    warnings.warn("Negative shares")
                     del book[e.id]
             case Order():
-                order = book.get(e.id)
-                if not order:
-                    warnings.warn(f"Missing order {e.id!r}")
+                if e.id in book:
+                    warnings.warn(f"Duplicate order {e.id!r}")
                     continue
-                totals[order.symbol] += e.count
+                book[e.id] = e
 
-    return sorted([(v, k) for k, v in totals.items()])[:n]
+    return sorted(((v, k) for k, v in totals.items()), reverse=True)[:n]
