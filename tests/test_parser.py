@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from cboe_test.parser import parse, top_volume
+from cboe_test.parser import parse, top_volume, Trade, Order, OrderCancel, OrderExecuted
 
 
 @pytest.fixture
@@ -27,3 +27,19 @@ def test_top_volume_smoke(testfile):
         (229, "DIA"),
         (210, "BAC"),
     ]
+
+
+def test_trade():
+    assert top_volume([Trade(0, 0, 42, "A", 0, 0)]) == [(42, "A")]
+    assert top_volume(
+        [
+            Trade(0, 0, 42, "A", 0, 0),
+            Trade(0, 0, 1, "A", 0, 0),
+        ]
+    ) == [(43, "A")]
+
+
+def test_order_cancel():
+    store = {}
+    assert not top_volume([Order(0, 42, 0, 100, 0, 0), OrderCancel(0, 42, 100)])
+    assert not store
